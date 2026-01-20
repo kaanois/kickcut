@@ -20,6 +20,8 @@ jobs:
     - name: Kütüphaneleri Yükle
       run: |
         pip install customtkinter playwright m3u8 pillow requests pyinstaller
+        # Playwright tarayıcılarını sisteme değil, projenin içine indir:
+        $env:PLAYWRIGHT_BROWSERS_PATH="0"
         python -m playwright install chromium
 
     - name: FFmpeg İndir ve Ayarla (PowerShell)
@@ -29,12 +31,17 @@ jobs:
         $ffmpegDir = Get-ChildItem -Directory -Filter "ffmpeg-master-*" | Select-Object -First 1
         Move-Item "$($ffmpegDir.FullName)\bin\ffmpeg.exe" .
 
-    - name: EXE Oluştur (TEK DOSYA MODU)
+    - name: EXE Oluştur (Browser Gömülü)
       run: |
-        # --onefile komutu her şeyi tek exe içine gömer
-        pyinstaller --noconfirm --onefile --windowed --name "KickStudioUltimate" --collect-all customtkinter main.py
+        # Ortam değişkenini tekrar ayarla ki PyInstaller doğru paketlesin
+        $env:PLAYWRIGHT_BROWSERS_PATH="0"
         
-        # FFmpeg exe içine gömülemez, onu dist klasörüne yanına kopyalayalım
+        # Tarayıcıyı EXE'nin içine, tam olarak hatada aradığı yere gömüyoruz:
+        # ".local-browsers;playwright/driver/package/.local-browsers" kısmı bu işi yapar.
+        
+        pyinstaller --noconfirm --onefile --windowed --name "KickStudioUltimate" --add-data ".local-browsers;playwright/driver/package/.local-browsers" --collect-all customtkinter main.py
+        
+        # FFmpeg'i de yanına koyalım (Yedek olarak)
         Copy-Item ffmpeg.exe dist/
 
     - name: Sonucu Yükle
