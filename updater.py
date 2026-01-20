@@ -75,14 +75,16 @@ class AutoUpdater:
         threading.Thread(target=self._download_and_install, daemon=True).start()
 
     def _download_and_install(self):
+     def _download_and_install(self):
         try:
-            # Eğer indirme linki boşsa hata verme, uyarı ver
-            if not self.exe_download_url:
-                self.parent_window.after(0, lambda: self.lbl_status.configure(text="HATA: İndirme linki ayarlanmamış!"))
-                return
+            # LİNK BURADA SABİT (Eski hata kodlarını sildik)
+            self.exe_download_url = "https://github.com/kaanois/kickcut/releases/latest/download/KickStudioUltimate.exe"
 
             save_path = "update_temp.exe"
+            # İndirmeyi başlat
             response = requests.get(self.exe_download_url, stream=True, timeout=15)
+            response.raise_for_status() # Link kırık ise hata ver
+            
             total_size = int(response.headers.get('content-length', 0))
             
             downloaded = 0
@@ -95,6 +97,13 @@ class AutoUpdater:
                         self.parent_window.after(0, lambda p=perc: self.progress.set(p))
             
             self.parent_window.after(0, lambda: self.lbl_status.configure(text="Tamamlandı! Program yeniden başlatılıyor..."))
+            time.sleep(1)
+            
+            # Windows için güncelleme betiği
+            self._create_bat_and_restart()
+            
+        except Exception as e:
+            self.parent_window.after(0, lambda: self.lbl_status.configure(text=f"Hata: {str(e)}"))
             time.sleep(2)
             
             # Windows için güncelleme betiği
