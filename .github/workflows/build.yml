@@ -20,8 +20,7 @@ jobs:
     - name: Kütüphaneleri Yükle
       run: |
         pip install customtkinter playwright m3u8 pillow requests pyinstaller
-        
-        # SİHİRLİ ADIM 1: Tarayıcıyı sistemin derinliklerine değil, proje klasörüne indir
+        # Tarayıcıyı Python kütüphane klasörünün içine ("0" konumu) indiriyoruz
         $env:PLAYWRIGHT_BROWSERS_PATH="0"
         python -m playwright install chromium
 
@@ -32,13 +31,17 @@ jobs:
         $ffmpegDir = Get-ChildItem -Directory -Filter "ffmpeg-master-*" | Select-Object -First 1
         Move-Item "$($ffmpegDir.FullName)\bin\ffmpeg.exe" .
 
-    - name: EXE Oluştur (Browser Gömülü)
+    - name: EXE Oluştur (Otomatik Konum Bulma)
       run: |
-        # SİHİRLİ ADIM 2: İndirdiğimiz tarayıcıyı EXE'nin içine paketle
-        $env:PLAYWRIGHT_BROWSERS_PATH="0"
+        # 1. Adım: Playwright'ın nereye kurulduğunu Python'a sorup öğreniyoruz
+        $pwPath = python -c "import playwright; print(playwright.__path__[0])"
+        $pwPath = $pwPath.Trim()
+        Write-Host "Playwright Kütüphanesi Şurada Bulundu: $pwPath"
         
-        # --add-data komutu ile .local-browsers klasörünü hatada görünen yere kopyalıyoruz
-        pyinstaller --noconfirm --onefile --windowed --name "KickStudioUltimate" --add-data ".local-browsers;playwright/driver/package/.local-browsers" --collect-all customtkinter main.py
+        # 2. Adım: O konumu kullanarak EXE'yi oluşturuyoruz
+        # $pwPath değişkenini kullanarak tam adresi veriyoruz, artık hata veremez.
+        
+        pyinstaller --noconfirm --onefile --windowed --name "KickStudioUltimate" --add-data "$pwPath\driver\package\.local-browsers;playwright/driver/package/.local-browsers" --collect-all customtkinter main.py
         
         # FFmpeg'i de yanına koyalım
         Copy-Item ffmpeg.exe dist/
