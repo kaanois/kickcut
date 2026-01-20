@@ -24,28 +24,21 @@ jobs:
 
     - name: FFmpeg İndir ve Ayarla (PowerShell)
       run: |
-        # FFmpeg'i indir
         Invoke-WebRequest -Uri https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip -OutFile ffmpeg.zip
-        
-        # Zipi aç
         Expand-Archive ffmpeg.zip -DestinationPath .
-        
-        # İçindeki klasörün ismini otomatik bul (İsmi değişse bile bulur)
         $ffmpegDir = Get-ChildItem -Directory -Filter "ffmpeg-master-*" | Select-Object -First 1
-        
-        # Dosyayı ana dizine taşı
         Move-Item "$($ffmpegDir.FullName)\bin\ffmpeg.exe" .
 
-    - name: EXE Oluştur
+    - name: EXE Oluştur (TEK DOSYA MODU)
       run: |
-        # PyInstaller ile EXE yap
-        pyinstaller --noconfirm --onedir --windowed --name "KickStudioUltimate" --collect-all customtkinter main.py
+        # --onefile komutu her şeyi tek exe içine gömer
+        pyinstaller --noconfirm --onefile --windowed --name "KickStudioUltimate" --collect-all customtkinter main.py
         
-        # FFmpeg'i programın yanına koy
-        Copy-Item ffmpeg.exe dist\KickStudioUltimate\
+        # FFmpeg exe içine gömülemez, onu dist klasörüne yanına kopyalayalım
+        Copy-Item ffmpeg.exe dist/
 
     - name: Sonucu Yükle
       uses: actions/upload-artifact@v4
       with:
         name: KickStudioUltimate-Windows
-        path: dist/KickStudioUltimate
+        path: dist/
