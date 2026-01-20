@@ -20,22 +20,31 @@ jobs:
     - name: Kütüphaneleri Yükle
       run: |
         pip install customtkinter playwright m3u8 pillow requests pyinstaller
-        playwright install chromium
+        python -m playwright install chromium
 
-    - name: EXE Oluştur (PyInstaller)
+    - name: FFmpeg İndir ve Ayarla (PowerShell)
       run: |
-        # FFmpeg'i indir (Windows için)
-        curl -L -o ffmpeg.zip https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip
-        7z x ffmpeg.zip
-        move ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe .
+        # FFmpeg'i indir
+        Invoke-WebRequest -Uri https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip -OutFile ffmpeg.zip
         
-        # EXE oluştur
-        pyinstaller --noconfirm --onedir --windowed --name "KickStudioUltimate" --add-data "customtkinter;customtkinter" --collect-all customtkinter main.py
+        # Zipi aç
+        Expand-Archive ffmpeg.zip -DestinationPath .
         
-        # FFmpeg'i dist klasörüne kopyala (Programın çalışması için şart)
-        copy ffmpeg.exe dist\KickStudioUltimate\
+        # İçindeki klasörün ismini otomatik bul (İsmi değişse bile bulur)
+        $ffmpegDir = Get-ChildItem -Directory -Filter "ffmpeg-master-*" | Select-Object -First 1
+        
+        # Dosyayı ana dizine taşı
+        Move-Item "$($ffmpegDir.FullName)\bin\ffmpeg.exe" .
 
-    - name: Sonucu Yükle (Artifacts)
+    - name: EXE Oluştur
+      run: |
+        # PyInstaller ile EXE yap
+        pyinstaller --noconfirm --onedir --windowed --name "KickStudioUltimate" --collect-all customtkinter main.py
+        
+        # FFmpeg'i programın yanına koy
+        Copy-Item ffmpeg.exe dist\KickStudioUltimate\
+
+    - name: Sonucu Yükle
       uses: actions/upload-artifact@v4
       with:
         name: KickStudioUltimate-Windows
