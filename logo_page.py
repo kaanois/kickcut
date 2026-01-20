@@ -6,12 +6,20 @@ import cv2
 import subprocess
 from PIL import Image
 
-# --- BACKEND (Değişmedi) ---
+# --- BACKEND (GÜNCELLENDİ: KLASÖRLEME) ---
 class ImageProcessorBackend:
     @staticmethod
     def process_image(image_path):
         if not os.path.exists(image_path):
             return None, "Dosya bulunamadı", 0, 0, 0
+
+        # --- DÜZENLEME: Thumbnail Klasörü ---
+        base_folder = os.path.dirname(os.path.abspath(__file__))
+        thumb_folder = os.path.join(base_folder, "Thumbnail")
+        
+        if not os.path.exists(thumb_folder):
+            os.makedirs(thumb_folder)
+        # ------------------------------------
 
         original_size = os.path.getsize(image_path) / (1024 * 1024)
         img = cv2.imread(image_path)
@@ -32,7 +40,10 @@ class ImageProcessorBackend:
         # Sıkıştırma
         filename = os.path.basename(image_path)
         name, ext = os.path.splitext(filename)
-        cikti_adi = f"HAZIR_{name}.jpg"
+        
+        # Kayıt yolu artık Thumbnail klasörü içinde
+        cikti_adi = os.path.join(thumb_folder, f"HAZIR_{name}.jpg")
+        
         hedef_byte = 1.95 * 1024 * 1024
         suanki_img = img.copy()
         kalite = 99; scale_percent = 100
@@ -153,6 +164,11 @@ class FrameLogoRemover(ctk.CTkFrame):
             self.btn_open_folder.configure(state="normal")
 
     def open_folder(self):
-        folder = os.getcwd()
-        if os.name == 'nt': os.startfile(folder)
-        else: subprocess.run(['xdg-open', folder])
+        # --- DÜZENLEME: Thumbnail Klasörünü Aç ---
+        base_folder = os.path.dirname(os.path.abspath(__file__))
+        thumb_folder = os.path.join(base_folder, "Thumbnail")
+        if not os.path.exists(thumb_folder):
+            os.makedirs(thumb_folder)
+            
+        if os.name == 'nt': os.startfile(thumb_folder)
+        else: subprocess.run(['xdg-open', thumb_folder])

@@ -128,7 +128,7 @@ class MainStudioApp(ctk.CTk):
         """Güncelleme kontrolünü başlatır"""
         try:
             # Şu anki sürüm: 1.0
-            self.updater = AutoUpdater("1.0", self)
+            self.updater = AutoUpdater("1.1", self)
             self.updater.check_for_updates()
         except Exception as e:
             print(f"Update hatasi: {e}")

@@ -186,7 +186,7 @@ class FrameKickStudio(ctk.CTkFrame):
         else:
             self.label_calc.configure(text="Süre: -- | Tahmini: -- MB", text_color="gray")
 
-    # --- ÖNİZLEME İNDİRME (GÜNCELLENDİ: TIMEOUT FIX) ---
+    # --- ÖNİZLEME İNDİRME (GÜNCELLENDİ: KLASÖRLEME EKLENDİ) ---
     def fetch_preview_bg(self):
         url = self.entry_url.get()
         start = self.entry_start.get()
@@ -213,7 +213,7 @@ class FrameKickStudio(ctk.CTkFrame):
                 
                 page.on("request", handle_request)
 
-                # DÜZELTME: Timeout 90sn ve DOM yüklenmesini bekle
+                # Timeout 90sn
                 page.goto(url, timeout=90000, wait_until="domcontentloaded")
                 
                 for i in range(25):
@@ -241,7 +241,14 @@ class FrameKickStudio(ctk.CTkFrame):
                 self.after(0, lambda: self.btn_preview_bg.configure(state="normal", text="🎬 Video Önizlemesini Getir"))
                 return
 
-            thumb_path = os.path.join(self.base_folder, "preview.jpg")
+            # --- DÜZENLEME BURADA: Klasör Oluşturma ---
+            thumb_folder = os.path.join(self.base_folder, "Thumbnail")
+            if not os.path.exists(thumb_folder):
+                os.makedirs(thumb_folder)
+
+            thumb_path = os.path.join(thumb_folder, "preview.jpg")
+            # -------------------------------------------
+
             cmd = ['ffmpeg', '-y', '-analyzeduration', '20M', '-probesize', '20M', '-ss', start_time, '-i', final_url, '-frames:v', '1', '-q:v', '2', thumb_path]
             subprocess.run(cmd, check=True, stderr=subprocess.DEVNULL)
             
@@ -369,7 +376,7 @@ class FrameKickStudio(ctk.CTkFrame):
         self.canvas.itemconfig(self.line_h, state="hidden")
         self.canvas.itemconfig(self.center_cross, state="hidden")
 
-    # --- TURBO RENDER (GÜNCELLENDİ: TIMEOUT FIX) ---
+    # --- TURBO RENDER (GÜNCELLENDİ: KLASÖRLEME EKLENDİ) ---
     def start_download_thread(self):
         if not self.entry_url.get(): return
         self.btn_download.configure(state="disabled", text="Turbo Render Hazırlanıyor...")
@@ -396,7 +403,7 @@ class FrameKickStudio(ctk.CTkFrame):
                 
                 page.on("request", handle_request)
 
-                # DÜZELTME: Timeout 90sn ve DOM yüklenmesini bekle
+                # Timeout 90sn
                 page.goto(url, timeout=90000, wait_until="domcontentloaded")
                 
                 for i in range(25):
@@ -427,7 +434,13 @@ class FrameKickStudio(ctk.CTkFrame):
             real_x = int(self.wm_x * ratio)
             real_y = int(self.wm_y * ratio)
             
-            output = os.path.join(self.base_folder, f"STUDIO_RENDER_{int(time.time())}.mp4")
+            # --- DÜZENLEME BURADA: Videolar Klasörü ---
+            video_folder = os.path.join(self.base_folder, "Videolar")
+            if not os.path.exists(video_folder):
+                os.makedirs(video_folder)
+                
+            output = os.path.join(video_folder, f"STUDIO_RENDER_{int(time.time())}.mp4")
+            # -------------------------------------------
             
             base_cmd = [
                 'ffmpeg', '-y', 
@@ -501,8 +514,14 @@ class FrameKickStudio(ctk.CTkFrame):
                 self.log("✅ Tamamlandı!")
                 self.after(0, lambda: self.progress_bar.set(1))
                 self.after(0, lambda: self.label_progress_perc.configure(text="%100 - Hazır"))
-                if os.name == 'nt': os.startfile(self.base_folder)
-                else: subprocess.run(['xdg-open', self.base_folder])
+                
+                # --- DÜZENLEME: İndirme bitince Videolar Klasörünü Aç ---
+                if os.name == 'nt': 
+                    os.startfile(video_folder)
+                else: 
+                    subprocess.run(['xdg-open', video_folder])
+                # --------------------------------------------------------
+                
             else:
                 self.log("❌ Hata oluştu.")
 
